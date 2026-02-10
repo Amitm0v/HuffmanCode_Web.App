@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Huffman App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join us to start encoding</p>
+
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" required>
+                <label>Username</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" name="password" required>
+                <label>Password</label>
+            </div>
+
+            <button type="submit" class="btn">Sign Up</button>
+
+            <p class="signup-link">
+                Already have an account? <a href="/login">Login</a>
+            </p>
+        </form>
+    </div>
+</body>
+</html>

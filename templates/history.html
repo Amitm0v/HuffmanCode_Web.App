@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encoding History | Huffman App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="history-container">
+        <h1>Encoding History for {{ username }}</h1>
+        
+        {% if encodings_with_indices %}
+            <p>Total: {{ total_count }} encoding(s)</p>
+            
+            {% for encoding_id, encoding in encodings_with_indices %}
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <strong>Encoding #{{ loop.index }}</strong>
+                        {% if encoding.saved %}
+                            <span class="saved-badge">Saved</span>
+                        {% else %}
+                            <a href="/save/{{ encoding_id }}"><button class="btn" style="padding: 6px 14px; font-size: 13px; min-width: auto;">Save</button></a>
+                        {% endif %}
+                    </div>
+                    <div class="history-meta">{{ encoding.timestamp }}</div>
+                </div>
+                
+                <div class="history-content">
+                    <p><strong>Original Text:</strong></p>
+                    <pre>{{ encoding.text }}</pre>
+                    
+                    <p><strong>Encoded Output:</strong></p>
+                    <pre>{{ encoding.encoded }}</pre>
+                    
+                    <p><strong>Compression Ratio:</strong> {{ encoding.ratio }}%</p>
+                    
+                    <details>
+                        <summary><strong>Character Codes ({{ encoding.codes|length }} characters)</strong></summary>
+                        <table style="margin-top: 10px;">
+                            <tr><th>Character</th><th>Code</th><th>Frequency</th></tr>
+                            {% for ch, code in encoding.codes.items() %}
+                            <tr>
+                                <td>{{ ch if ch != ' ' else '[space]' }}</td>
+                                <td>{{ code }}</td>
+                                <td>{{ encoding.frequency[ch] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </details>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No encoding history yet. <a href="/encode">Start encoding!</a></p>
+        {% endif %}
+        
+        <div class="button-group">
+            <a href="/dashboard"><button class="btn">Back to Dashboard</button></a>
+            <a href="/encode"><button class="btn">Encode New Text</button></a>
+            <a href="/logout"><button class="btn">Logout</button></a>
+        </div>
+    </div>
+</body>
+</html>
+

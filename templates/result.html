@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encoding Result | Huffman App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+<h2>Huffman Result</h2>
+<table>
+<tr><th>Original Text</th><th>Encoded Output</th></tr>
+<tr><td>{{ text }}</td><td>{{ encoded }}</td></tr>
+</table>
+{% if ratio is defined %}
+<div style="text-align: center; margin: 25px 0; padding: 20px; background: linear-gradient(135deg, #00bcd4, #0097a7); border-radius: 12px; color: white;">
+    <p style="margin: 0; font-size: 18px; font-weight: 600; font-family: 'Montserrat', sans-serif;">
+        Compression Ratio: <span style="font-size: 28px; font-weight: 800;">{{ ratio }}%</span>
+    </p>
+</div>
+{% endif %}
+<br>
+<table>
+<tr><th>Character</th><th>Code</th><th>Frequency</th></tr>
+{% for ch, code in codes.items() %}
+<tr>
+<td>{{ ch }}</td>
+<td>{{ code }}</td>
+<td>{{ frequency[ch] }}</td>
+</tr>
+{% endfor %}
+</table><br>
+<div class="button-group" style="margin-top: 20px;">
+    <button onclick="showTreeAnimation()" class="btn" style="background: linear-gradient(135deg, #00bcd4, #0097a7);">🌳 Show Tree Animation</button>
+    <a href="/encode"><button class="btn">Encode Again</button></a>
+    <a href="/dashboard"><button class="btn">Dashboard</button></a>
+    <a href="/history"><button class="btn">View History</button></a>
+    <a href="/logout"><button class="btn">Logout</button></a>
+</div>
+</div>
+
+<!-- Tree Visualization Modal -->
+<div id="treeModal" class="tree-modal" style="display: none;">
+    <div class="tree-modal-content">
+        <div class="tree-modal-header">
+            <h2>Huffman Tree Visualization</h2>
+            <button class="close-btn" onclick="closeTreeModal()">&times;</button>
+        </div>
+        <div class="tree-container">
+            <canvas id="treeCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const treeData = {{ tree_json|safe }};
+    
+    // Color palette for different letters
+    const letterColors = [
+        { light: '#00bcd4', dark: '#0097a7' },  // Teal
+        { light: '#ff6b6b', dark: '#ee5a6f' },  // Coral
+        { light: '#4caf50', dark: '#388e3c' },  // Green
+        { light: '#ff9800', dark: '#f57c00' },  // Orange
+        { light: '#9c27b0', dark: '#7b1fa2' },  // Purple
+        { light: '#e91e63', dark: '#c2185b' },  // Pink
+        { light: '#00bcd4', dark: '#00838f' },  // Cyan
+        { light: '#ff5722', dark: '#d84315' },  // Deep Orange
+        { light: '#795548', dark: '#5d4037' },  // Brown
+        { light: '#607d8b', dark: '#455a64' },  // Blue Grey
+        { light: '#8bc34a', dark: '#689f38' },  // Light Green
+        { light: '#ffc107', dark: '#ffa000' },  // Amber
+        { light: '#3f51b5', dark: '#303f9f' },  // Indigo
+        { light: '#f44336', dark: '#d32f2f' },  // Red
+        { light: '#009688', dark: '#00796b' },  // Teal Dark
+        { light: '#673ab7', dark: '#512da8' }   // Deep Purple
+    ];
+    
+    function getColorForChar(char) {
+        if (!char) return letterColors[0];
+        const index = char.charCodeAt(0) % letterColors.length;
+        return letterColors[index];
+    }
+    
+    function showTreeAnimation() {
+        document.getElementById('treeModal').style.display = 'flex';
+        setTimeout(() => {
+            drawTree();
+        }, 100);
+    }
+    
+    function closeTreeModal() {
+        document.getElementById('treeModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('treeModal');
+        if (event.target == modal) {
+            closeTreeModal();
+        }
+    }
+    
+    function countLeaves(node) {
+        if (!node) return 0;
+        if (node.char !== null) return 1;
+        return (node.left ? countLeaves(node.left) : 0) + 
+               (node.right ? countLeaves(node.right) : 0);
+    }
+    
+    function drawTree() {
+        const canvas = document.getElementById('treeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = Math.max(1400, window.innerWidth * 0.95);
+        canvas.height = Math.max(900, window.innerHeight * 0.85);
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (!treeData) {
+            ctx.fillStyle = '#1a237e';
+            ctx.font = '20px Montserrat';
+            ctx.textAlign = 'center';
+            ctx.fillText('No tree data available', canvas.width / 2, canvas.height / 2);
+            return;
+        }
+        
+        // Calculate tree dimensions
+        const maxDepth = getMaxDepth(treeData);
+        const nodeRadius = 35;
+        const levelHeight = 140;
+        const minNodeSpacing = 100;
+        
+        // Calculate total width needed based on leaves
+        const totalLeaves = countLeaves(treeData);
+        const totalWidth = Math.max(totalLeaves * minNodeSpacing, 800);
+        
+        // Center the tree horizontally
+        const startX = canvas.width / 2;
+        const startY = 100;
+        
+        // Store node positions - use Map for better performance
+        const nodePositions = new Map();
+        
+        // Calculate positions for all nodes (pre-calculate to prevent overlap)
+        calculatePositions(treeData, startX, startY, totalWidth, levelHeight, nodePositions, 0);
+        
+        // Draw tree with animation
+        let animationStep = 0;
+        const totalSteps = 120;
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const progress = Math.min(animationStep / totalSteps, 1);
+            const easeProgress = easeInOutCubic(progress);
+            
+            drawTreeWithPositions(ctx, treeData, nodePositions, levelHeight, nodeRadius, easeProgress, 0, maxDepth);
+            
+            animationStep += 1.5;
+            if (animationStep <= totalSteps) {
+                requestAnimationFrame(animate);
+            }
+        }
+        
+        animate();
+    }
+    
+    function getNodeId(node, depth, x) {
+        // Create unique ID based on node properties and position
+        return `${depth}_${node.char !== null ? node.char : 'i'}_${node.freq}_${x.toFixed(2)}`;
+    }
+    
+    function calculatePositions(node, x, y, width, levelHeight, positions, depth) {
+        if (!node) return x;
+        
+        // Create unique ID for this node
+        const nodeId = getNodeId(node, depth, x);
+        positions.set(nodeId, { x, y, node });
+        
+        if (node.char !== null) {
+            // Leaf node - return its x position
+            return x;
+        }
+        
+        // Internal node - calculate children positions based on leaf distribution
+        const leftLeaves = node.left ? countLeaves(node.left) : 0;
+        const rightLeaves = node.right ? countLeaves(node.right) : 0;
+        const totalLeaves = leftLeaves + rightLeaves;
+        
+        if (totalLeaves === 0) {
+            return x;
+        }
+        
+        // Calculate proportional widths
+        const leftWidth = leftLeaves > 0 ? (leftLeaves / totalLeaves) * width : 0;
+        const rightWidth = rightLeaves > 0 ? (rightLeaves / totalLeaves) * width : 0;
+        
+        // Calculate starting positions for children
+        const leftStartX = x - width / 2;
+        const rightStartX = leftStartX + leftWidth;
+        
+        // Position left child
+        if (node.left && leftWidth > 0) {
+            const leftX = leftStartX + leftWidth / 2;
+            calculatePositions(node.left, leftX, y + levelHeight, leftWidth, levelHeight, positions, depth + 1);
+        }
+        
+        // Position right child
+        if (node.right && rightWidth > 0) {
+            const rightX = rightStartX + rightWidth / 2;
+            calculatePositions(node.right, rightX, y + levelHeight, rightWidth, levelHeight, positions, depth + 1);
+        }
+        
+        return x;
+    }
+    
+    function findNodePosition(positions, targetNode) {
+        for (const [key, value] of positions.entries()) {
+            if (value.node === targetNode) {
+                return value;
+            }
+        }
+        return null;
+    }
+    
+    function drawTreeWithPositions(ctx, node, positions, levelHeight, radius, progress, currentDepth, maxDepth) {
+        if (!node) return;
+        
+        // Find node position
+        const nodePos = findNodePosition(positions, node);
+        if (!nodePos) return;
+        
+        const { x, y } = nodePos;
+        const nodeProgress = Math.min(progress * (maxDepth + 1) - currentDepth, 1);
+        if (nodeProgress <= 0) return;
+        
+        // Find children positions
+        const leftPos = node.left ? findNodePosition(positions, node.left) : null;
+        const rightPos = node.right ? findNodePosition(positions, node.right) : null;
+        
+        // Draw connections to children first (behind nodes)
+        if (leftPos && nodeProgress > 0.3) {
+            const lineProgress = Math.min((nodeProgress - 0.3) / 0.4, 1);
+            
+            ctx.strokeStyle = `rgba(0, 188, 212, ${lineProgress})`;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x, y + radius);
+            ctx.lineTo(leftPos.x, leftPos.y - radius);
+            ctx.stroke();
+            
+            // Draw "0" label
+            ctx.fillStyle = `rgba(0, 188, 212, ${lineProgress})`;
+            ctx.font = 'bold 18px Montserrat';
+            ctx.fillText('0', (x + leftPos.x) / 2 - 12, (y + leftPos.y) / 2);
+        }
+        
+        if (rightPos && nodeProgress > 0.3) {
+            const lineProgress = Math.min((nodeProgress - 0.3) / 0.4, 1);
+            
+            ctx.strokeStyle = `rgba(255, 107, 107, ${lineProgress})`;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x, y + radius);
+            ctx.lineTo(rightPos.x, rightPos.y - radius);
+            ctx.stroke();
+            
+            // Draw "1" label
+            ctx.fillStyle = `rgba(255, 107, 107, ${lineProgress})`;
+            ctx.font = 'bold 18px Montserrat';
+            ctx.fillText('1', (x + rightPos.x) / 2 + 12, (y + rightPos.y) / 2);
+        }
+        
+        // Draw node
+        const nodeAlpha = Math.min(nodeProgress * 1.5, 1);
+        
+        // Node circle with gradient
+        const gradient = ctx.createRadialGradient(x - 12, y - 12, 0, x, y, radius);
+        
+        if (node.char !== null) {
+            // Leaf node - use unique color for each character
+            const colors = getColorForChar(node.char);
+            gradient.addColorStop(0, `rgba(${hexToRgb(colors.light)}, ${nodeAlpha})`);
+            gradient.addColorStop(1, `rgba(${hexToRgb(colors.dark)}, ${nodeAlpha})`);
+        } else {
+            // Internal node - use indigo gradient
+            gradient.addColorStop(0, `rgba(26, 35, 126, ${nodeAlpha})`);
+            gradient.addColorStop(1, `rgba(40, 53, 147, ${nodeAlpha})`);
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Node border
+        ctx.strokeStyle = `rgba(255, 255, 255, ${nodeAlpha})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Node text
+        ctx.fillStyle = `rgba(255, 255, 255, ${nodeAlpha})`;
+        ctx.font = 'bold 16px Montserrat';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (node.char !== null) {
+            // Display character
+            const displayChar = node.char === ' ' ? '[space]' : node.char;
+            ctx.fillText(displayChar, x, y - 10);
+            ctx.font = '13px Inter';
+            ctx.fillText(`f:${node.freq}`, x, y + 10);
+        } else {
+            // Display frequency
+            ctx.fillText(`f:${node.freq}`, x, y);
+        }
+        
+        // Recursively draw children
+        if (node.left && nodeProgress > 0.5) {
+            drawTreeWithPositions(ctx, node.left, positions, levelHeight, radius, progress, currentDepth + 1, maxDepth);
+        }
+        if (node.right && nodeProgress > 0.5) {
+            drawTreeWithPositions(ctx, node.right, positions, levelHeight, radius, progress, currentDepth + 1, maxDepth);
+        }
+    }
+    
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? 
+            `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+            '0, 188, 212';
+    }
+    
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    
+    function getMaxDepth(node) {
+        if (!node) return 0;
+        if (!node.left && !node.right) return 1;
+        return 1 + Math.max(
+            node.left ? getMaxDepth(node.left) : 0,
+            node.right ? getMaxDepth(node.right) : 0
+        );
+    }
+    
+    // Redraw on window resize
+    window.addEventListener('resize', function() {
+        if (document.getElementById('treeModal').style.display === 'flex') {
+            drawTree();
+        }
+    });
+</script>
+
+<style>
+.tree-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(26, 35, 126, 0.9);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
+}
+
+.tree-modal-content {
+    background: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 20px;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 95vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.tree-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #1a237e, #283593);
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+.tree-modal-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    background: rgba(255, 107, 107, 0.8);
+    transform: rotate(90deg);
+}
+
+.tree-container {
+    padding: 30px;
+    overflow: auto;
+    flex: 1;
+    background: #f5f7fa;
+}
+
+#treeCanvas {
+    display: block;
+    margin: 0 auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(26, 35, 126, 0.15);
+    background: white;
+}
+</style>
+
+</body>
+</html>

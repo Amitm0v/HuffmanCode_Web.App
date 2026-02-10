@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encode Text | Huffman App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Huffman Encoding</h2>
+
+    <form method="POST" action="/encode">
+        <textarea name="text" placeholder="Enter text to encode..." required></textarea>
+        <button type="submit" class="btn">Encode Text</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="/dashboard" style="color: white; font-weight: 600;">← Back to Dashboard</a> | 
+        <a href="/logout" style="color: white; font-weight: 600;">Logout</a>
+    </div>
+</body>
+</html>

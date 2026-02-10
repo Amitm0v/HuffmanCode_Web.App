@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Huffman App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="dashboard-container">
+    <h1>Welcome, {{ username }}</h1>
+
+    <div class="dashboard-cards">
+
+        <div class="card">
+            <h3>Total Encodings</h3>
+            <p>{{ total_encodings }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Last Encoded</h3>
+            <p>{{ last_text }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Compression Ratio</h3>
+            <p>{{ ratio }}%</p>
+        </div>
+
+        <div class="card">
+            <h3>Saved Results</h3>
+            <p>{{ saved_count }}</p>
+        </div>
+
+    </div>
+
+    <div class="dashboard-buttons">
+        <button onclick="window.location.href='/encode'" class="btn">Encode Now</button>
+        <button onclick="window.location.href='/history'" class="btn">View History</button>
+        <form method="POST" action="/clear" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear all encoding history?');">
+            <button type="submit" class="btn btn-danger">Clear All</button>
+        </form>
+        <button onclick="window.location.href='/logout'" class="btn">Logout</button>
+    </div>
+
+</div>
+
+</body>
+</html>
