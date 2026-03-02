@@ -54,11 +54,7 @@ Frequency table generation
 Priority queue–based tree construction
 
 Binary code assignment
-
 Tree serialization for visualization
-
 Optimized position calculation for node rendering
-
 Time Complexity:
-
 Building Huffman Tree: O(n log n)
