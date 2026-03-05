@@ -10,39 +10,24 @@ This web application makes the algorithm interactive, visual, and user-friendly,
 ✨ Key Features
 
 🔐 User Authentication (Login & Signup)
-
 ✍️ Text Encoding using Huffman Algorithm
-
 📊 Compression Ratio Calculation
-
 🌳 Animated Huffman Tree Visualization (color-coded & interactive)
-
 🕒 Encoding History & Bookmarking
-
 📈 Dashboard Analytics with Dynamic Cards
-
 🎨 Modern UI with 4-Color Design System
 
 🛠️ Tech Stack
 
 Backend
-
 Python
-
 Flask
-
 Frontend
-
 HTML5
-
 CSS3
-
 JavaScript
-
 Design
-
 Modern typography
-
 Clean 4-color palette
 
 Responsive layout
