@@ -33,9 +33,7 @@ Clean 4-color palette
 Responsive layout
 
 🧠 Algorithm Highlights
-
 Frequency table generation
-
 Priority queue–based tree construction
 
 Binary code assignment
