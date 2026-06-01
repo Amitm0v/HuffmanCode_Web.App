@@ -2,6 +2,7 @@ An Interactive Data Compression Tool
 
 This project is a modern web-based implementation of Huffman Coding, designed to demonstrate lossless data compression through an intuitive and visually rich interface. The application allows users to encode text, visualize the Huffman tree step-by-step, and analyze compression efficiency in real time.
 
+
 🚀 Project Overview
 
 Huffman Coding is a widely used lossless compression algorithm that assigns variable-length codes to characters based on their frequency.
